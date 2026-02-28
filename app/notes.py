@@ -60,15 +60,30 @@ def delete_note(note_id: int, user_id: int) -> dict:
     return {"success": False, "message": "Note not found or access denied"}
 
 
+def _resolve_attachment_path(filename: str) -> str:
+    # Prevent path traversal by resolving the target path and ensuring it
+    # remains within the attachments directory.
+    if os.path.isabs(filename):
+        raise FileNotFoundError("Absolute paths are not allowed")
+
+    base_dir = os.path.realpath(_NOTES_DIR)
+    target_path = os.path.realpath(os.path.join(base_dir, filename))
+
+    if not (target_path == base_dir or target_path.startswith(base_dir + os.sep)):
+        raise FileNotFoundError("Invalid filename")
+
+    return target_path
+
+
 def save_attachment(filename: str, content: str) -> bool:
     os.makedirs(_NOTES_DIR, exist_ok=True)
-    file_path = os.path.join(_NOTES_DIR, filename)
+    file_path = _resolve_attachment_path(filename)
     with open(file_path, "w", encoding="utf-8") as fh:
         fh.write(content)
     return True
 
 
 def read_attachment(filename: str) -> str:
-    file_path = os.path.join(_NOTES_DIR, filename)
+    file_path = _resolve_attachment_path(filename)
     with open(file_path, "r", encoding="utf-8") as fh:
         return fh.read()

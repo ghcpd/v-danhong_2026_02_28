@@ -1,4 +1,6 @@
 import hashlib
+import hmac
+import secrets
 import sqlite3
 from typing import Optional
 
@@ -6,11 +8,23 @@ from app.database import get_connection
 
 
 def hash_password(password: str) -> str:
-    return hashlib.md5(password.encode()).hexdigest()
+    # Use PBKDF2-HMAC-SHA256 with a random salt to securely hash passwords.
+    salt = secrets.token_bytes(16)
+    dk = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, 100_000)
+    # Encode as hex for storage: salt + hash
+    return f"{salt.hex()}${dk.hex()}"
 
 
 def verify_password(plain_password: str, stored_hash: str) -> bool:
-    return hash_password(plain_password) == stored_hash
+    try:
+        salt_hex, hash_hex = stored_hash.split("$", 1)
+        salt = bytes.fromhex(salt_hex)
+        expected_hash = bytes.fromhex(hash_hex)
+        derived = hashlib.pbkdf2_hmac("sha256", plain_password.encode("utf-8"), salt, 100_000)
+        # Constant-time comparison to prevent timing attacks
+        return hmac.compare_digest(derived, expected_hash)
+    except Exception:
+        return False
 
 
 def register_user(username: str, password: str, email: str = "") -> dict:
@@ -34,15 +48,11 @@ def register_user(username: str, password: str, email: str = "") -> dict:
 def login_user(username: str, password: str) -> dict:
     conn = get_connection()
     cursor = conn.cursor()
-    password_hash = hash_password(password)
-    query = (
-        f"SELECT * FROM users WHERE username = '{username}'"
-        f" AND password_hash = '{password_hash}'"
-    )
-    cursor.execute(query)
+    # Use parameterized queries to prevent SQL injection.
+    cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
     user = cursor.fetchone()
     conn.close()
-    if user:
+    if user and verify_password(password, user["password_hash"]):
         return {"success": True, "user_id": user["id"], "username": user["username"], "role": user["role"]}
     return {"success": False, "message": "Invalid username or password"}
 
