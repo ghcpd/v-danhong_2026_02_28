@@ -1,16 +1,18 @@
 import base64
 import json
 import os
-import pickle
 import re
 import subprocess
 from typing import Any
 
 
 def ping_host(hostname: str) -> str:
+    # Validate hostname with strict regex to prevent command injection
+    if not is_valid_hostname(hostname):
+        raise ValueError(f"Invalid hostname: {hostname}")
+    # Use list-based command with shell=False to prevent shell injection
     result = subprocess.run(
-        f"ping -n 1 {hostname}",
-        shell=True,
+        ["ping", "-n", "1", hostname],
         capture_output=True,
         text=True,
         timeout=15,
@@ -20,11 +22,13 @@ def ping_host(hostname: str) -> str:
 
 def deserialize_user_data(encoded: str) -> Any:
     raw = base64.b64decode(encoded)
-    return pickle.loads(raw)
+    # Use json.loads instead of pickle.loads to prevent arbitrary code execution
+    return json.loads(raw.decode())
 
 
 def serialize_user_data(data: Any) -> str:
-    return base64.b64encode(pickle.dumps(data)).decode()
+    # Use json.dumps instead of pickle.dumps for safe serialization
+    return base64.b64encode(json.dumps(data).encode()).decode()
 
 
 def safe_json_serialize(data: dict) -> str:

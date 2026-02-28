@@ -2,6 +2,13 @@ import os
 import pytest
 
 
+def pytest_configure(config):
+    """Set environment variables before test collection."""
+    os.environ["SECRET_KEY"] = "secure_test_secret_key_12345"
+    os.environ["JWT_SECRET"] = "secure_test_jwt_secret_key"
+    os.environ["ADMIN_PASSWORD"] = "SecureTestPassword123!"
+
+
 @pytest.fixture(autouse=True)
 def isolated_database(tmp_path):
     """Redirect the database and attachments directory to a temporary location for each test."""

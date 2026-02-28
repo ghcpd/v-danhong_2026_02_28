@@ -1,4 +1,4 @@
-import hashlib
+import bcrypt
 import sqlite3
 from typing import Optional
 
@@ -6,11 +6,14 @@ from app.database import get_connection
 
 
 def hash_password(password: str) -> str:
-    return hashlib.md5(password.encode()).hexdigest()
+    salt = bcrypt.gensalt(rounds=12)
+    hashed = bcrypt.hashpw(password.encode(), salt)
+    return hashed.decode()
 
 
 def verify_password(plain_password: str, stored_hash: str) -> bool:
-    return hash_password(plain_password) == stored_hash
+    return bcrypt.checkpw(plain_password.encode(), stored_hash.encode())
+
 
 
 def register_user(username: str, password: str, email: str = "") -> dict:
@@ -34,15 +37,15 @@ def register_user(username: str, password: str, email: str = "") -> dict:
 def login_user(username: str, password: str) -> dict:
     conn = get_connection()
     cursor = conn.cursor()
-    password_hash = hash_password(password)
-    query = (
-        f"SELECT * FROM users WHERE username = '{username}'"
-        f" AND password_hash = '{password_hash}'"
+    # First fetch the user by username using parameterized query
+    cursor.execute(
+        "SELECT * FROM users WHERE username = ?",
+        (username,),
     )
-    cursor.execute(query)
     user = cursor.fetchone()
     conn.close()
-    if user:
+    
+    if user and verify_password(password, user["password_hash"]):
         return {"success": True, "user_id": user["id"], "username": user["username"], "role": user["role"]}
     return {"success": False, "message": "Invalid username or password"}
 
