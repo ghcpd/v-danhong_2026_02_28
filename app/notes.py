@@ -61,14 +61,22 @@ def delete_note(note_id: int, user_id: int) -> dict:
 
 
 def save_attachment(filename: str, content: str) -> bool:
+    # ensure the target path stays within the attachments directory
     os.makedirs(_NOTES_DIR, exist_ok=True)
     file_path = os.path.join(_NOTES_DIR, filename)
-    with open(file_path, "w", encoding="utf-8") as fh:
+    normalized = os.path.realpath(file_path)
+    if not normalized.startswith(os.path.realpath(_NOTES_DIR) + os.sep):
+        raise ValueError("Invalid attachment path")
+    with open(normalized, "w", encoding="utf-8") as fh:
         fh.write(content)
     return True
 
 
 def read_attachment(filename: str) -> str:
     file_path = os.path.join(_NOTES_DIR, filename)
-    with open(file_path, "r", encoding="utf-8") as fh:
+    normalized = os.path.realpath(file_path)
+    if not normalized.startswith(os.path.realpath(_NOTES_DIR) + os.sep):
+        # prevent directory traversal
+        raise FileNotFoundError("Invalid attachment path")
+    with open(normalized, "r", encoding="utf-8") as fh:
         return fh.read()

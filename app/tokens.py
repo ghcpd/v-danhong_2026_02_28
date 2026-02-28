@@ -3,7 +3,7 @@ import hmac
 import time
 from typing import Optional
 
-from app.config import JWT_SECRET
+from app.config import JWT_SECRET, TOKEN_EXPIRY_SECONDS
 
 
 def generate_token(user_id: int) -> str:
@@ -21,9 +21,10 @@ def verify_token(token: str) -> dict:
         user_id_str, timestamp_str, provided_sig = parts
         payload = f"{user_id_str}:{timestamp_str}"
         expected_sig = hashlib.sha256((payload + JWT_SECRET).encode()).hexdigest()
-        if provided_sig == expected_sig:
+        # use constant-time comparison to thwart timing attacks
+        if hmac.compare_digest(provided_sig, expected_sig):
             age = int(time.time()) - int(timestamp_str)
-            if age > 3600:
+            if age > TOKEN_EXPIRY_SECONDS:
                 return {"valid": False, "reason": "token expired"}
             return {"valid": True, "user_id": int(user_id_str)}
         return {"valid": False, "reason": "invalid signature"}
