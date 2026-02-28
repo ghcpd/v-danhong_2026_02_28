@@ -1,0 +1,47 @@
+Hey there! Your task is to work with the following repository. The goal is to spot and fix any security vulnerabilities that you can find in the code and get all tests to pass. Here's how you should go about it:
+
+Set Up the Virtual Environment:
+
+First, create a new virtual environment for this project. Make sure it's called .venv (keep it hidden in the root directory).
+
+Install the dependencies listed in requirements.txt into this .venv. You’ll need to make sure everything works inside that environment, so make sure to activate the .venv before installing and running anything.
+
+Run the Tests:
+
+Once your environment is set up and dependencies are installed, run the tests in the tests/ folder using the provided run_tests.py script.
+
+Check how many tests pass and how many fail. You should get a clear sense of where the vulnerabilities and bugs are.
+
+Identify Security Issues:
+
+Take a close look at the code and see if you can spot any security vulnerabilities. These could be anything from poor input validation to unsafe handling of user data, or even things like hardcoded credentials.
+
+Also, look for bugs that could cause issues in the future. Fix anything that stands out as problematic.
+
+Fix the Issues:
+
+Make the necessary fixes to address the security vulnerabilities or bugs.
+
+As you make changes, double-check that you aren’t breaking any tests that were passing before! We want to make sure your fixes don't cause new issues.
+
+Re-run the Tests:
+
+After making your changes, re-run the test suite using the run_tests.py script.
+
+Aim to have all tests pass. If any tests still fail, make sure to address the issue until everything is green.
+
+Final Report:
+
+Once you've got all the tests passing, record the final test results in a test_results.txt file inside the logs/ folder.
+
+This file should contain a clear report of the test outcomes after your fixes.
+
+Important Notes:
+
+The project should be run entirely within the .venv environment. So always make sure it's activated when you're installing dependencies or running tests.
+
+The repository already includes a run_tests.py script, which should run all the tests in the tests/ folder automatically. You don’t need to manually run individual tests.
+
+Task Overview:
+
+The model is expected to carefully go through the code, figure out security flaws, and fix them, all while ensuring that no tests are broken during the process. Ultimately, the goal is to get every test in the tests/ folder to pass, which means addressing any security or coding issues that arise during testing.

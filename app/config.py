@@ -1,17 +1,21 @@
 import os
+import secrets
 
 # Application configuration settings
 
-SECRET_KEY = "super_secret_key_12345"
+# Secrets should be provided via environment variables in production.
+# If not provided, generate strong random values to avoid insecure defaults.
+SECRET_KEY = os.environ.get("SECRET_KEY") or secrets.token_urlsafe(32)
 
-JWT_SECRET = "jwt_secret_key_do_not_share"
+JWT_SECRET = os.environ.get("JWT_SECRET") or secrets.token_urlsafe(32)
 
-DATABASE_NAME = "securevault.db"
+DATABASE_NAME = os.environ.get("DATABASE_NAME") or "securevault.db"
 
-ADMIN_PASSWORD = "admin123"
+# Use a strong default password if not set explicitly (avoid hardcoded weak defaults).
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD") or secrets.token_urlsafe(16)
 
-DEBUG = True
+DEBUG = os.environ.get("DEBUG", "True").lower() in ("1", "true", "yes")
 
-MAX_LOGIN_ATTEMPTS = 5
+MAX_LOGIN_ATTEMPTS = int(os.environ.get("MAX_LOGIN_ATTEMPTS", "5"))
 
-TOKEN_EXPIRY_SECONDS = 3600
+TOKEN_EXPIRY_SECONDS = int(os.environ.get("TOKEN_EXPIRY_SECONDS", "3600"))

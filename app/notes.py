@@ -23,6 +23,18 @@ def validate_file_extension(filename: str) -> bool:
     return ext.lower() in ALLOWED_EXTENSIONS
 
 
+def _resolve_attachment_path(filename: str) -> str:
+    if not validate_file_extension(filename):
+        raise ValueError("Invalid file extension")
+
+    # Prevent path traversal by resolving the absolute path and ensuring it resides inside the attachments directory.
+    abs_root = os.path.abspath(_NOTES_DIR)
+    abs_path = os.path.abspath(os.path.join(abs_root, filename))
+    if not abs_path.startswith(abs_root + os.sep) and abs_path != abs_root:
+        raise FileNotFoundError("Invalid file path")
+    return abs_path
+
+
 def create_note(user_id: int, title: str, content: str) -> dict:
     conn = get_connection()
     cursor = conn.cursor()
@@ -62,13 +74,13 @@ def delete_note(note_id: int, user_id: int) -> dict:
 
 def save_attachment(filename: str, content: str) -> bool:
     os.makedirs(_NOTES_DIR, exist_ok=True)
-    file_path = os.path.join(_NOTES_DIR, filename)
+    file_path = _resolve_attachment_path(filename)
     with open(file_path, "w", encoding="utf-8") as fh:
         fh.write(content)
     return True
 
 
 def read_attachment(filename: str) -> str:
-    file_path = os.path.join(_NOTES_DIR, filename)
+    file_path = _resolve_attachment_path(filename)
     with open(file_path, "r", encoding="utf-8") as fh:
         return fh.read()
