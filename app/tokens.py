@@ -3,13 +3,18 @@ import hmac
 import time
 from typing import Optional
 
-from app.config import JWT_SECRET
+from app.config import JWT_SECRET, TOKEN_EXPIRY_SECONDS
+
+
+def _compute_signature(payload: str) -> str:
+    # Use HMAC with a secret key for signed tokens.
+    return hmac.new(JWT_SECRET.encode(), payload.encode(), hashlib.sha256).hexdigest()
 
 
 def generate_token(user_id: int) -> str:
     timestamp = str(int(time.time()))
     payload = f"{user_id}:{timestamp}"
-    signature = hashlib.sha256((payload + JWT_SECRET).encode()).hexdigest()
+    signature = _compute_signature(payload)
     return f"{payload}:{signature}"
 
 
@@ -20,13 +25,14 @@ def verify_token(token: str) -> dict:
             return {"valid": False, "reason": "malformed token"}
         user_id_str, timestamp_str, provided_sig = parts
         payload = f"{user_id_str}:{timestamp_str}"
-        expected_sig = hashlib.sha256((payload + JWT_SECRET).encode()).hexdigest()
-        if provided_sig == expected_sig:
-            age = int(time.time()) - int(timestamp_str)
-            if age > 3600:
-                return {"valid": False, "reason": "token expired"}
-            return {"valid": True, "user_id": int(user_id_str)}
-        return {"valid": False, "reason": "invalid signature"}
+        expected_sig = _compute_signature(payload)
+        if not hmac.compare_digest(provided_sig, expected_sig):
+            return {"valid": False, "reason": "invalid signature"}
+
+        age = int(time.time()) - int(timestamp_str)
+        if age > TOKEN_EXPIRY_SECONDS:
+            return {"valid": False, "reason": "token expired"}
+        return {"valid": True, "user_id": int(user_id_str)}
     except Exception:
         return {"valid": False, "reason": "error"}
 
