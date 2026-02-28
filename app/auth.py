@@ -1,4 +1,6 @@
 import hashlib
+import hmac
+import os
 import sqlite3
 from typing import Optional
 
@@ -6,11 +8,25 @@ from app.database import get_connection
 
 
 def hash_password(password: str) -> str:
-    return hashlib.md5(password.encode()).hexdigest()
+    # Use PBKDF2-HMAC with sha256 and a random salt to produce a strong
+    # password hash.  The returned string stores salt and digest separated
+    # by a colon so we can verify later.
+    salt = os.urandom(16)
+    dk = hashlib.pbkdf2_hmac("sha256", password.encode(), salt, 100000)
+    return salt.hex() + ":" + dk.hex()
 
 
 def verify_password(plain_password: str, stored_hash: str) -> bool:
-    return hash_password(plain_password) == stored_hash
+    try:
+        salt_hex, dk_hex = stored_hash.split(":")
+        salt = bytes.fromhex(salt_hex)
+        dk = bytes.fromhex(dk_hex)
+    except ValueError:
+        # malformed stored hash
+        return False
+    new_dk = hashlib.pbkdf2_hmac("sha256", plain_password.encode(), salt, 100000)
+    # constant-time comparison
+    return hmac.compare_digest(new_dk, dk)
 
 
 def register_user(username: str, password: str, email: str = "") -> dict:
@@ -34,15 +50,14 @@ def register_user(username: str, password: str, email: str = "") -> dict:
 def login_user(username: str, password: str) -> dict:
     conn = get_connection()
     cursor = conn.cursor()
-    password_hash = hash_password(password)
-    query = (
-        f"SELECT * FROM users WHERE username = '{username}'"
-        f" AND password_hash = '{password_hash}'"
+    # fetch the stored hash for this user and verify with verify_password
+    cursor.execute(
+        "SELECT * FROM users WHERE username = ?",
+        (username,),
     )
-    cursor.execute(query)
     user = cursor.fetchone()
     conn.close()
-    if user:
+    if user and verify_password(password, user["password_hash"]):
         return {"success": True, "user_id": user["id"], "username": user["username"], "role": user["role"]}
     return {"success": False, "message": "Invalid username or password"}
 
