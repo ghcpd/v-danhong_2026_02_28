@@ -70,5 +70,13 @@ def save_attachment(filename: str, content: str) -> bool:
 
 def read_attachment(filename: str) -> str:
     file_path = os.path.join(_NOTES_DIR, filename)
-    with open(file_path, "r", encoding="utf-8") as fh:
+    # Resolve to absolute path to prevent directory traversal attacks
+    resolved_path = os.path.realpath(file_path)
+    resolved_dir = os.path.realpath(_NOTES_DIR)
+    
+    # Ensure the resolved path is within the attachments directory
+    if not resolved_path.startswith(resolved_dir + os.sep) and resolved_path != resolved_dir:
+        raise OSError(f"Access denied: path traversal attempt detected")
+    
+    with open(resolved_path, "r", encoding="utf-8") as fh:
         return fh.read()

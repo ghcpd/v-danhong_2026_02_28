@@ -2,13 +2,20 @@ import os
 
 # Application configuration settings
 
-SECRET_KEY = "super_secret_key_12345"
+# Load secrets from environment variables - never hardcode secrets
+SECRET_KEY = os.environ.get("SECRET_KEY")
+if not SECRET_KEY:
+    raise ValueError("SECRET_KEY environment variable must be set")
 
-JWT_SECRET = "jwt_secret_key_do_not_share"
+JWT_SECRET = os.environ.get("JWT_SECRET")
+if not JWT_SECRET:
+    raise ValueError("JWT_SECRET environment variable must be set")
 
 DATABASE_NAME = "securevault.db"
 
-ADMIN_PASSWORD = "admin123"
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
+if not ADMIN_PASSWORD:
+    raise ValueError("ADMIN_PASSWORD environment variable must be set")
 
 DEBUG = True
 

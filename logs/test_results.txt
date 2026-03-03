@@ -3,82 +3,19 @@ collecting ... collected 16 items
 
 tests/test_authentication.py::test_valid_user_registration PASSED        [  6%]
 tests/test_authentication.py::test_valid_login_with_correct_password PASSED [ 12%]
-tests/test_authentication.py::test_sql_injection_bypass_authentication FAILED [ 18%]
-tests/test_configuration.py::test_hardcoded_secret_key_in_configuration FAILED [ 25%]
-tests/test_configuration.py::test_admin_password_is_insecure_default FAILED [ 31%]
+tests/test_authentication.py::test_sql_injection_bypass_authentication PASSED [ 18%]
+tests/test_configuration.py::test_hardcoded_secret_key_in_configuration PASSED [ 25%]
+tests/test_configuration.py::test_admin_password_is_insecure_default PASSED [ 31%]
 tests/test_configuration.py::test_secure_compare_uses_constant_time PASSED [ 37%]
 tests/test_cryptography.py::test_password_verification_works PASSED      [ 43%]
-tests/test_cryptography.py::test_password_hash_is_cryptographically_weak FAILED [ 50%]
-tests/test_cryptography.py::test_timing_attack_in_token_verification FAILED [ 56%]
+tests/test_cryptography.py::test_password_hash_is_cryptographically_weak PASSED [ 50%]
+tests/test_cryptography.py::test_timing_attack_in_token_verification PASSED [ 56%]
 tests/test_deserialization.py::test_json_serialization_roundtrip PASSED  [ 62%]
-tests/test_deserialization.py::test_pickle_deserialization_arbitrary_code_execution FAILED [ 68%]
+tests/test_deserialization.py::test_pickle_deserialization_arbitrary_code_execution PASSED [ 68%]
 tests/test_file_handling.py::test_file_extension_validation PASSED       [ 75%]
 tests/test_file_handling.py::test_valid_attachment_saved_and_read PASSED [ 81%]
-tests/test_file_handling.py::test_path_traversal_reads_outside_directory FAILED [ 87%]
-tests/test_injection.py::test_command_injection_via_hostname FAILED      [ 93%]
+tests/test_file_handling.py::test_path_traversal_reads_outside_directory PASSED [ 87%]
+tests/test_injection.py::test_command_injection_via_hostname PASSED      [ 93%]
 tests/test_injection.py::test_report_generation_with_safe_values PASSED  [100%]
 
-================================== FAILURES ===================================
-__________________ test_sql_injection_bypass_authentication ___________________
-tests\test_authentication.py:45: in test_sql_injection_bypass_authentication
-    assert result["success"] is False, (
-E   AssertionError: SQL injection bypassed authentication – login_user is vulnerable to SQL injection
-E   assert True is False
-_________________ test_hardcoded_secret_key_in_configuration __________________
-tests\test_configuration.py:25: in test_hardcoded_secret_key_in_configuration
-    assert JWT_SECRET not in known_insecure_defaults, (
-E   AssertionError: JWT_SECRET is set to the hardcoded insecure default 'jwt_secret_key_do_not_share' – secrets must be loaded from environment variables, not stored in source code
-E   assert 'jwt_secret_key_do_not_share' not in {'jwt_secret_key_do_not_share', 'super_secret_key_12345'}
-___________________ test_admin_password_is_insecure_default ___________________
-tests\test_configuration.py:45: in test_admin_password_is_insecure_default
-    assert ADMIN_PASSWORD not in known_weak_passwords, (
-E   AssertionError: ADMIN_PASSWORD is set to the insecure default 'admin123' – administrative credentials must never be hardcoded or set to weak defaults
-E   assert 'admin123' not in {'123456', 'admin', 'admin123', 'admin@123', 'password'}
-________________ test_password_hash_is_cryptographically_weak _________________
-tests\test_cryptography.py:35: in test_password_hash_is_cryptographically_weak
-    assert len(pw_hash) >= 60, (
-E   AssertionError: Password hash is only 32 characters long – this indicates a weak algorithm (MD5 produces 32 hex chars)
-E   assert 32 >= 60
-E    +  where 32 = len('022fbf2ecce227edd779d00349a5eb5c')
-__________________ test_timing_attack_in_token_verification ___________________
-tests\test_cryptography.py:51: in test_timing_attack_in_token_verification
-    assert "compare_digest" in source, (
-E   AssertionError: verify_token uses '==' for signature comparison – this is vulnerable to timing attacks; use hmac.compare_digest instead
-E   assert 'compare_digest' in 'def verify_token(token: str) -> dict:\n    try:\n        parts = token.split(":")\n        if len(parts) != 3:\n            return {"valid": False, "reason": "malformed token"}\n        user_id_str, timestamp_str, provided_sig = parts\n        payload = f"{user_id_str}:{timestamp_str}"\n        expected_sig = hashlib.sha256((payload + JWT_SECRET).encode()).hexdigest()\n        if provided_sig == expected_sig:\n            age = int(time.time()) - int(timestamp_str)\n            if age > 3600:\n                return {"valid": False, "reason": "token expired"}\n            return {"valid": True, "user_id": int(user_id_str)}\n        return {"valid": False, "reason": "invalid signature"}\n    except Exception:\n        return {"valid": False, "reason": "error"}\n'
-____________ test_pickle_deserialization_arbitrary_code_execution _____________
-tests\test_deserialization.py:58: in test_pickle_deserialization_arbitrary_code_execution
-    assert not os.path.exists(flag_file), (
-E   AssertionError: deserialize_user_data executed arbitrary code from the pickle payload – calling open() via __reduce__ created a file on disk; pickle.loads must not be used with untrusted input
-E   assert not True
-E    +  where True = <built-in function _path_exists>('C:\\Users\\v-danhong\\AppData\\Local\\Temp\\pytest-of-v-danhong\\pytest-2\\test_pickle_deserialization_ar0\\exploit_executed.flag')
-E    +    where <built-in function _path_exists> = <module 'ntpath' (frozen)>.exists
-E    +      where <module 'ntpath' (frozen)> = os.path
-_________________ test_path_traversal_reads_outside_directory _________________
-tests\test_file_handling.py:59: in test_path_traversal_reads_outside_directory
-    assert content != "database_password=S3cr3tPa$$w0rd", (
-E   AssertionError: Path traversal succeeded – read_attachment returned contents of a file outside the designated attachments directory
-E   assert 'database_password=S3cr3tPa$$w0rd' != 'database_password=S3cr3tPa$$w0rd'
-_____________________ test_command_injection_via_hostname _____________________
-tests\test_injection.py:22: in test_command_injection_via_hostname
-    assert "shell=True" not in source, (
-E   AssertionError: ping_host passes user-controlled input to a shell=True subprocess – this allows OS command injection (e.g. '127.0.0.1 & del /f important.txt')
-E   assert 'shell=True' not in 'def ping_ho...r).strip()\n'
-E     
-E     'shell=True' is contained here:
-E       def ping_host(hostname: str) -> str:
-E           result = subprocess.run(
-E               f"ping -n 1 {hostname}",
-E               shell=True,
-E               capture_output=True,...
-E     
-E     ...Full output truncated (4 lines hidden), use '-vv' to show
-=========================== short test summary info ===========================
-FAILED tests/test_authentication.py::test_sql_injection_bypass_authentication
-FAILED tests/test_configuration.py::test_hardcoded_secret_key_in_configuration
-FAILED tests/test_configuration.py::test_admin_password_is_insecure_default
-FAILED tests/test_cryptography.py::test_password_hash_is_cryptographically_weak
-FAILED tests/test_cryptography.py::test_timing_attack_in_token_verification
-FAILED tests/test_deserialization.py::test_pickle_deserialization_arbitrary_code_execution
-FAILED tests/test_file_handling.py::test_path_traversal_reads_outside_directory
-FAILED tests/test_injection.py::test_command_injection_via_hostname - Asserti...
-========================= 8 failed, 8 passed in 0.58s =========================
+============================= 16 passed in 2.24s ==============================

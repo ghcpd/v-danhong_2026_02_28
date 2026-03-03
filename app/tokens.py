@@ -21,7 +21,8 @@ def verify_token(token: str) -> dict:
         user_id_str, timestamp_str, provided_sig = parts
         payload = f"{user_id_str}:{timestamp_str}"
         expected_sig = hashlib.sha256((payload + JWT_SECRET).encode()).hexdigest()
-        if provided_sig == expected_sig:
+        # Use hmac.compare_digest for constant-time comparison to prevent timing attacks
+        if hmac.compare_digest(provided_sig, expected_sig):
             age = int(time.time()) - int(timestamp_str)
             if age > 3600:
                 return {"valid": False, "reason": "token expired"}
